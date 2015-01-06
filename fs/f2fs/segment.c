@@ -1236,6 +1236,10 @@ void allocate_data_block(struct f2fs_sb_info *sbi, struct page *page,
 	if (direct_io && curseg->next_blkoff)
 		__allocate_new_segments(sbi, type);
 
+	/* direct_io'ed data is aligned to the segment for better performance */
+	if (direct_io && curseg->next_blkoff)
+		__allocate_new_segments(sbi, type);
+
 	*new_blkaddr = NEXT_FREE_BLKADDR(sbi, curseg);
 
 	/*
