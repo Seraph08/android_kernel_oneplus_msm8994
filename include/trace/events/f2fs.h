@@ -190,7 +190,7 @@ TRACE_EVENT(f2fs_sync_fs,
 
 	TP_STRUCT__entry(
 		__field(dev_t,	dev)
-		__field(int,	dirty)
+		__field(bool,	dirty)
 		__field(int,	wait)
 	),
 
