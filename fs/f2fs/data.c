@@ -894,6 +894,9 @@ void f2fs_update_extent_cache(struct dnode_of_data *dn)
 	if (is_inode_flag_set(fi, FI_NO_EXTENT))
 		return;
 
+	if (is_inode_flag_set(fi, FI_NO_EXTENT))
+		return;
+
 	fofs = start_bidx_of_node(ofs_of_node(dn->node_page), fi) +
 							dn->ofs_in_node;
 
