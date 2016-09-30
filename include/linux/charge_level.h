@@ -32,7 +32,7 @@ extern int charger_type;
 
 #define USB_CHARGE_LEVEL_DEFAULT 500
 #define USB_CHARGE_LEVEL_MIN 0
-#define USB_CHARGE_LEVEL_MAX 1600
+#define USB_CHARGE_LEVEL_MAX 500
 
 #define BK_CHARGER_NONE		0
 #define BK_CHARGER_AC		1
