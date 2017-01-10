@@ -25,6 +25,9 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/time.h>
+// TheCrazyLex@PA Add for the Shadow scheduling hook - start
+#include <linux/sched.h>
+// TheCrazyLex@PA Add for the Shadow scheduling hook - end
 
 struct cpu_sync {
 	struct task_struct *thread;
@@ -235,6 +238,11 @@ static void do_input_boost_rem(struct work_struct *work)
 	/* Update policies for all online CPUs */
 	update_policy_online();
 
+	// TheCrazyLex@PA Add for the Shadow scheduling hook - start
+	/* Deactivate Shadow */
+	sched_set_shadow_active(false);
+	// TheCrazyLex@PA Add for the Shadow scheduling hook - end
+
 	if (sched_boost_active) {
 		ret = sched_set_boost(0);
 		if (ret)
@@ -375,6 +383,11 @@ static void do_input_boost(struct work_struct *work)
 
 	/* Update policies for all online CPUs */
 	update_policy_online();
+
+	// TheCrazyLex@PA Add for the Shadow scheduling hook - start
+	/* Activate Shadow */
+	sched_set_shadow_active(true);
+	// TheCrazyLex@PA Add for the Shadow scheduling hook - end
 
 	/* Enable scheduler boost to migrate tasks to big cluster */
 	if (sched_boost_on_input) {
