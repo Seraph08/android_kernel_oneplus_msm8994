@@ -16840,8 +16840,8 @@ void hdd_unsafe_channel_restart_sap(hdd_context_t *hdd_ctx)
 						0);
 
 				hddLog(LOG1, FL("driver to start sap: %d"),
-					hdd_ctx->cfg_ini->sap_internal_restart);
-				if (hdd_ctx->cfg_ini->sap_internal_restart) {
+					hdd_ctx->cfg_ini->sap_restrt_ch_avoid);
+				if (hdd_ctx->cfg_ini->sap_restrt_ch_avoid) {
 					wlan_hdd_netif_queue_control(adapter,
 							WLAN_NETIF_TX_DISABLE,
 							WLAN_CONTROL_PATH);
