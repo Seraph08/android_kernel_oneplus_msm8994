@@ -1379,30 +1379,27 @@ static int fg_soc_calibrate(struct fg_chip *di, int soc)
 
 
 		}
-		} else { // not charging
-			if ((abs(soc - di->soc_pre) >  0)
-						|| (di->batt_vol_pre <= LOW_BATTERY_PROTECT_VOLTAGE && di->batt_vol_pre > 2500 * 1000)) {// add for batt_vol is too low but soc is not jumping
-				di->saltate_counter++;
-				if(di->soc_pre == 100) {
-					counter_temp = CAPACITY_SALTATE_COUNTER_FULL;//t>=5min
-				} else if (di->soc_pre > 95) {
-					counter_temp = CAPACITY_SALTATE_COUNTER_95;///t>=2.5min
-				} else if (di->soc_pre > 60) {
-					counter_temp = CAPACITY_SALTATE_COUNTER_60;//t>=1min
-				} else {
-					if(time_last > CAPACITY_CALIBRATE_TIME_60_PERCENT && (soc - di->soc_pre)<0)
-						{
-						counter_temp = 0;
-					}
-					else
-					counter_temp = CAPACITY_SALTATE_COUNTER_NOT_CHARGING + 20;//t>=40sec
-				}
-				/* when batt_vol is too low(and soc is jumping), decrease faster to avoid dead battery shutdown */
-					if (di->batt_vol_pre <= LOW_BATTERY_PROTECT_VOLTAGE && di->batt_vol_pre > 2500 * 1000 && di->soc_pre <= 10) {
-						if (get_sram_prop_now(di, FG_DATA_VOLTAGE) <= LOW_BATTERY_PROTECT_VOLTAGE && get_sram_prop_now(di, FG_DATA_VOLTAGE) > 2500 * 1000) {//check again
-						counter_temp = CAPACITY_SALTATE_COUNTER - 1;//about 9s
-					}
-				}
+	} else { //not charging
+		if (soc < di->soc_pre) {
+
+			if(di->soc_pre == 100){
+				counter_temp = FIVE_MINUTES;
+			}
+			else if (di->soc_pre > 95){
+				counter_temp = TWO_POINT_FIVE_MINUTES;
+			}
+			else if (di->soc_pre > 60){
+				counter_temp = ONE_MINUTE;
+			}
+			else {
+				counter_temp = CAPACITY_CALIBRATE_TIME_60_PERCENT;
+			}
+
+			if(time_last > counter_temp)
+			{
+				allow_change = true;
+			}
+		}
 
 				if(di->saltate_counter < counter_temp)
 					return di->soc_pre;
