@@ -1,8 +1,8 @@
 /*
- * Author: andip71, 11.03.2016
+ * Author: andip71, 25.07.2017
  *
- * Version 1.2
- * 
+ * Version 1.0
+ *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
  * may be copied, distributed, and modified under those terms.
@@ -15,166 +15,53 @@
  */
 
 
+#include <linux/module.h>
 #include <linux/kobject.h>
 #include <linux/sysfs.h>
-#include <linux/charge_level.h>
+#include <linux/power_supply.h>
 
 
-/* sysfs interface for charge levels */
-
-static ssize_t charge_level_ac_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	// print current value
-	return sprintf(buf, "%d mA", ac_level);
-}
+/* imported function prototypes */
+int get_bk_current_now (void);
+int get_bk_charger_type (void);
 
 
-static ssize_t charge_level_ac_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	int val;
-
-	// read value from input buffer
-	ret = sscanf(buf, "%d", &val);
-
-	if (ret != 1)
-		return -EINVAL;
-		
-	// check whether value is within the valid ranges and adjust accordingly
-	if (val > AC_CHARGE_LEVEL_MAX)
-		val = AC_CHARGE_LEVEL_MAX;
-
-	if (val < AC_CHARGE_LEVEL_MIN)
-		val = AC_CHARGE_LEVEL_MIN;
-
-	// store value
-	ac_level = val;
-
-	return count;
-}
-
-
-static ssize_t charge_level_cdp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	// print current value
-	return sprintf(buf, "%d mA", cdp_level);
-}
-
-
-static ssize_t charge_level_cdp_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	int val;
-
-	// read value from input buffer
-	ret = sscanf(buf, "%d", &val);
-
-	if (ret != 1)
-		return -EINVAL;
-		
-	// check whether value is within the valid ranges and adjust accordingly
-	if (val > CDP_CHARGE_LEVEL_MAX)
-		val = CDP_CHARGE_LEVEL_MAX;
-
-	if (val < CDP_CHARGE_LEVEL_MIN)
-		val = CDP_CHARGE_LEVEL_MIN;
-
-	// store value
-	cdp_level = val;
-
-	return count;
-}
-
-
-static ssize_t charge_level_usb_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	// print current value
-	return sprintf(buf, "%d mA", usb_level);
-}
-
-
-static ssize_t charge_level_usb_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	unsigned int ret = -EINVAL;
-	int val;
-
-	// read value from input buffer
-	ret = sscanf(buf, "%d", &val);
-
-	if (ret != 1)
-		return -EINVAL;
-		
-	// check whether value is within the valid ranges and adjust accordingly
-	if (val > USB_CHARGE_LEVEL_MAX)
-		val = USB_CHARGE_LEVEL_MAX;
-
-	if (val < USB_CHARGE_LEVEL_MIN)
-		val = USB_CHARGE_LEVEL_MIN;
-
-	// store value
-	usb_level = val;
-
-	return count;
-}
-
-
+/* sysfs interface */
 static ssize_t charge_info_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	char charge_info_text[30];
-	
+
 	// check connected charger type
-	switch (charger_type)
+	switch (get_bk_charger_type())
 	{
-		case BK_CHARGER_NONE:
-			return sprintf(buf, "No charger");
-			break;
-			
-		case BK_CHARGER_AC:
-			sprintf(charge_info_text, "AC charger");
+		case POWER_SUPPLY_TYPE_UNKNOWN:
+			sprintf(charge_info_text, "No charger");
 			break;
 
-		case BK_CHARGER_CDP:
-			sprintf(charge_info_text, "CDP charger");
+		case POWER_SUPPLY_TYPE_USB_DCP:
+			sprintf(charge_info_text, "~%d mA (AC charger)", get_bk_current_now());
 			break;
-			
-		case BK_CHARGER_USB:
-			sprintf(charge_info_text, "USB charger");
+
+		case POWER_SUPPLY_TYPE_USB:
+			sprintf(charge_info_text, "~%d mA (USB charger)", get_bk_current_now());
 			break;
-			
+
 		default:
-			sprintf(charge_info_text, "Unknown charger");
+			sprintf(charge_info_text, "~%d mA (unknown charger)", get_bk_current_now());
 			break;
 	}
 
-	// stock charge logic
-	if (charge_level == 0)
-		return sprintf(buf, "%s / ~%d mA (%d) SL", 
-				charge_info_text, charge_info_level_cur, charge_info_level_req);
-
-	// non-stock charge logic
-		return sprintf(buf, "%s / ~%d mA (%d)", 
-			charge_info_text, charge_info_level_cur, charge_info_level_req);
+	// return info text
+	return sprintf(buf, charge_info_text);
 }
 
 
 /* Initialize charge level sysfs folder */
 
-static struct kobj_attribute charge_level_ac_attribute =
-__ATTR(charge_level_ac, 0666, charge_level_ac_show, charge_level_ac_store);
-
-static struct kobj_attribute charge_level_cdp_attribute =
-__ATTR(charge_level_cdp, 0666, charge_level_cdp_show, charge_level_cdp_store);
-
-static struct kobj_attribute charge_level_usb_attribute =
-__ATTR(charge_level_usb, 0666, charge_level_usb_show, charge_level_usb_store);
-
 static struct kobj_attribute charge_info_attribute =
-__ATTR(charge_info, 0666, charge_info_show, NULL);
+__ATTR(charge_info, 0664, charge_info_show, NULL);
 
 static struct attribute *charge_level_attrs[] = {
-&charge_level_ac_attribute.attr,
-&charge_level_cdp_attribute.attr,
-&charge_level_usb_attribute.attr,
 &charge_info_attribute.attr,
 NULL,
 };
@@ -190,9 +77,9 @@ int charge_level_init(void)
 {
 	int charge_level_retval;
 
-        charge_level_kobj = kobject_create_and_add("charge_levels", kernel_kobj);
+    charge_level_kobj = kobject_create_and_add("charge_levels", kernel_kobj);
 
-        if (!charge_level_kobj)
+    if (!charge_level_kobj)
 	{
 		printk("Boeffla-Kernel: failed to create kernel object for charge level interface.\n");
                 return -ENOMEM;
@@ -200,17 +87,17 @@ int charge_level_init(void)
 
         charge_level_retval = sysfs_create_group(charge_level_kobj, &charge_level_attr_group);
 
-        if (charge_level_retval)
+    if (charge_level_retval)
 	{
-			kobject_put(charge_level_kobj);
+		kobject_put(charge_level_kobj);
 		printk("Boeffla-Kernel: failed to create fs object for charge level interface.\n");
-	        return (charge_level_retval);
+	    return (charge_level_retval);
 	}
 
 	// print debug info
 	printk("Boeffla-Kernel: charge level interface started.\n");
 
-        return (charge_level_retval);
+    return (charge_level_retval);
 }
 
 
