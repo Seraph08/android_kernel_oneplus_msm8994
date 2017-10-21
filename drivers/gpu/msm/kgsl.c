@@ -2933,7 +2933,6 @@ static int kgsl_setup_useraddr(struct kgsl_mem_entry *entry,
 		if (fd != 0)
 			dmabuf = dma_buf_get(fd - 1);
 	}
-	up_read(&current->mm->mmap_sem);
 
 	if (!IS_ERR_OR_NULL(dmabuf)) {
 		int ret = kgsl_setup_dma_buf(entry, pagetable, device, dmabuf);
@@ -2943,6 +2942,7 @@ static int kgsl_setup_useraddr(struct kgsl_mem_entry *entry,
 		} else {
 			/* Match the cache settings of the vma region */
 			_setup_cache_mode(entry, vma);
+			up_read(&current->mm->mmap_sem);
 			/* Set the useraddr to the incoming hostptr */
 			entry->memdesc.useraddr = param->hostptr;
 		}
